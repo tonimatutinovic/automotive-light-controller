@@ -1,0 +1,15 @@
+# VS Code
+.vscode/
+
+# Arduino build files
+*.hex
+*.elf
+*.eep
+
+# Python cache (za kasnije)
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
