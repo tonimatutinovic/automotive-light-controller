@@ -1,3 +1,9 @@
+#include <Wire.h>
+#include <RTClib.h>
+
+// RTC
+RTC_DS3231 rtc;
+
 // Pins
 const int POT_PIN = A0;
 const int DASH_LDR_PIN = A1;
@@ -45,6 +51,17 @@ bool backFault = false;
 // Error value
 String error = "NO";
 
+// Time
+DateTime now;
+DateTime nightTime, sunriseTime;
+bool SimulatedTime = false;
+
+// Functions for getting sunset and sunrise time
+DateTime getNightTime(DateTime current);
+DateTime getSunriseTime(DateTime current);
+
+// Time simulation for testing
+DateTime getSimulatedTime();
 
 // Function for updating LED
 void UpdateLED(int r, int g, int b){
@@ -55,6 +72,18 @@ void UpdateLED(int r, int g, int b){
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("Starting main program...");
+
+  // RTC setup
+  if(!rtc.begin()){
+    Serial.println("RTC not found!");
+    while(1);
+  }
+
+  if(rtc.lostPower()){
+    Serial.println("RTC lost power, setting to compile time");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
@@ -62,6 +91,15 @@ void setup() {
 
   pinMode(HEADLIGHT_PIN, OUTPUT);
 
+  if(SimulatedTime)
+    now = getSimulatedTime(); // now is simulated time (for testing purposes)
+  else
+    now = rtc.now();
+  // Getting sunset and sunrise time based on time given
+  nightTime = getNightTime(now);
+  sunriseTime = getSunriseTime(now);
+
+  // Signal indicating that setup process is completed
   Serial.println("READY");
 }
 
@@ -107,31 +145,43 @@ void modeAuto() {
     error = "CRITICAL_FAULT"; // error status for Serial and  VPython
   }
   // One active - system works based on one LDR, shows error message for inactive LDR
-  else if(dashFault)
-    error = "DASH_FAULT";
-  else if(backFault) 
-    error = "BACK_FAULT";
-  // Both active - system works
-  else
-    error = "NO";
+  else {
+    if(dashFault)
+      error = "DASH_FAULT";
+    else if(backFault) 
+      error = "BACK_FAULT";
+    // Both active - system works
+    else
+      error = "NO";
 
-  bool dashActive = !dashFault && (dashLDRval > Threshold);
-  bool backActive = !backFault && (backLDRval > Threshold);
+    bool dashActive = !dashFault && (dashLDRval > Threshold);
+    bool backActive = !backFault && (backLDRval > Threshold);
 
-  // Threshold logic
-  if (dashActive || backActive){
-    if(ldrChangeStart == 0){
-      ldrChangeStart = millis();
+    // CHECK TIME - night is after sunset until sunrise
+    bool isNight = (now >= nightTime || now <= sunriseTime);
+
+    // NIGHT
+    if(isNight){
+        ldrLightsOn = true; // Lights on
+        auto_mode = "AUTO_ON";
     }
-    else if(millis() - ldrChangeStart >= CHANGE_DELAY){
-      ldrLightsOn = true;
-      auto_mode = "AUTO_ON";
+    // DAY
+    else{
+      if (dashActive || backActive){
+        if(ldrChangeStart == 0){
+          ldrChangeStart = millis();
+        }
+        else if(millis() - ldrChangeStart >= CHANGE_DELAY){
+          ldrLightsOn = true;
+          auto_mode = "AUTO_ON";
+        }
+      }
+      else{
+        ldrLightsOn = false;
+        ldrChangeStart = 0;
+        auto_mode = "AUTO_OFF";
+      }
     }
-  }
-  else{
-    ldrLightsOn = false;
-    ldrChangeStart = 0;
-    auto_mode = "AUTO_OFF";
   }
 
   // Update Headlight
@@ -159,6 +209,13 @@ void modeOn() {
 }
 
 void loop() {
+  // Updating current time
+  if(SimulatedTime)
+    now = getSimulatedTime();
+  else
+    now = rtc.now();
+
+  // Reading potentiometer value
   potVal = analogRead(POT_PIN);
 
   // Basic mode selection (example ranges)
@@ -171,4 +228,90 @@ void loop() {
   }
 
   delay(dt);
+}
+
+// Function for getting sunset time for date given
+DateTime getNightTime(DateTime current){
+  int year = current.year();
+  DateTime winterSolstice(year,12,21,16,3,0); // winter solstice sunset
+  DateTime summerSolstice(year,6,21,20,39,0); // summer solstice sunset
+
+  // If time given is after winter solstice, winter solstice was year before
+  if(current < summerSolstice && current.month() < 6)
+    winterSolstice = DateTime(year-1,12,21,16,3,0);
+
+  TimeSpan total = summerSolstice - winterSolstice;
+  int totalDays = total.days(); // Number of days between summer and winter solstice
+
+  long sunsetMinutes;
+  int winterMinutes = 16*60 + 3;
+  int summerMinutes = 20*60 + 39;
+
+  // Time given is between winter solstice and summer solstice
+  if(current >= winterSolstice && current <= summerSolstice){
+    TimeSpan diff = current - winterSolstice; // Calculating time passed from winter solstice
+    int daysPassed = diff.days(); // Number of days passed from winter solstice
+    sunsetMinutes = winterMinutes + daysPassed*2; // Getting minutes from winter solstice sunset + days passed multiplied by average daily shift (2 minutes)
+  }
+  // Time given is between summer solstice and winter solstice
+  else{
+    TimeSpan diff = current - summerSolstice; // Calculating time passed from summer solstice
+    int daysPassed = diff.days(); // Number of days passed from summer solstice
+    sunsetMinutes = summerMinutes - daysPassed*2; // Getting minutes from summer solstice sunset - days passed multiplied by average daily shift (2 minutes)
+  }
+
+  // Ensuring that sunsetMinutes stays in realistic bounds
+  if(sunsetMinutes > summerMinutes) sunsetMinutes = summerMinutes;  // latest possible sunset
+  if(sunsetMinutes < winterMinutes) sunsetMinutes = winterMinutes;  // earliest possible sunset
+
+  int hour = sunsetMinutes/60;  // sunset hour
+  int minute = sunsetMinutes%60;  // sunset minute
+  return DateTime(year,current.month(),current.day(),hour,minute,0);  // returning DateTime of sunset
+}
+
+// Function for getting sunrise time for date given
+DateTime getSunriseTime(DateTime current){
+  int year = current.year();
+  DateTime winterSolstice(year,12,21,6,27,0); // winter solstice sunrise
+  DateTime summerSolstice(year,6,21,5,13,0);  // summer solstice sunrise
+
+  // If time given is after winter solstice, winter solstice was year before
+  if(current < summerSolstice && current.month() < 6)
+    winterSolstice = DateTime(year-1,12,21,6,27,0);
+
+  TimeSpan total = summerSolstice - winterSolstice;
+  int totalDays = total.days(); // Number of days between summer and winter solstice
+
+  long sunriseMinutes;
+  int winterMinutes = 6*60 + 27;
+  int summerMinutes = 5*60 + 13;
+
+  // Time given is between winter solstice and summer solstice
+  if(current >= winterSolstice && current <= summerSolstice){
+    TimeSpan diff = current - winterSolstice; // Calculating time passed from winter solstice
+    int daysPassed = diff.days(); // Number of days passed from winter solstice
+    sunriseMinutes = winterMinutes - daysPassed*2;  // Getting minutes from winter solstice sunrise - days passed multiplied by average daily shift (2 minutes)
+  }
+  // Time given is between summer solstice and winter solstice
+  else{
+    TimeSpan diff = current - summerSolstice; // Calculating time passed from summer solstice
+    int daysPassed = diff.days(); // Number of days passed from summer solstice
+    sunriseMinutes = summerMinutes + daysPassed*2;  // Getting minutes from summer solstice sunrise + days passed multiplied by average daily shift (2 minutes)
+  }
+
+  // Ensuring that sunriseMinutes stays in realistic bounds
+  if(sunriseMinutes < summerMinutes) sunriseMinutes = summerMinutes;  // earliest possible sunrise
+  if(sunriseMinutes > winterMinutes) sunriseMinutes = winterMinutes;  // latest possible sunrise
+
+  int hour = sunriseMinutes/60; // sunrise hour
+  int minute = sunriseMinutes%60; // sunrise minute
+  return DateTime(year,current.month(),current.day(),hour,minute,0);  // returning DateTime of sunrise
+}
+
+// Getter for simulated time (for testing)
+DateTime getSimulatedTime() {
+  DateTime now = rtc.now();
+  int hour = 12;
+  int minute = 30;
+  return DateTime(now.year(), now.month(), now.day(), hour, minute, 0);
 }
