@@ -51,7 +51,14 @@ void modeOff() {
 }
 
 void modeAuto() {
-  // Auto mode logic
+  // Reading sensor values
+  dashLDRval = analogRead(DASH_LDR_PIN);
+  backLDRval = analogRead(BACK_LDR_PIN);
+
+  Serial.print("Dash LDR: ");
+  Serial.print(dashLDRval);
+  Serial.print(" Back LDR: ");
+  Serial.println(backLDRval);
 }
 
 void modeOn() {
