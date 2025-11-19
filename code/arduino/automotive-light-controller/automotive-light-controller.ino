@@ -123,7 +123,7 @@ void modeOff() {
 void modeAuto() {
   // Reading sensor values
   dashLDRval = analogRead(DASH_LDR_PIN);
-  backLDRval = analogRead(BACK_LDR_PIN);
+  backLDRval = analogRead(BACK_LDR_PIN) + 200; // offset
 
   // CHECK DASH LDR
   if(dashLDRval < LDR_MIN || dashLDRval > LDR_MAX){
@@ -210,7 +210,12 @@ void modeAuto() {
   Serial.print(" ");
   Serial.print(auto_mode);
   Serial.print(" ");
-  Serial.println(error);
+  Serial.print(error);
+  Serial.print(" ");
+  Serial.print(now.hour());
+  Serial.print(" ");
+  Serial.println(now.minute());
+
 }
 
 void modeOn() {
