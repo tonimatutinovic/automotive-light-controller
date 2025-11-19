@@ -14,11 +14,23 @@ int potVal = 0;
 int dashLDRval = 0;
 int backLDRval = 0;
 
+// Work mode based on potentiometer value
+int OFFstart = 0, OFFend = 341;
+int AUTOstart = 342, AUTOend = 682;
+int ONstart = 683, ONend = 1023;
+
 // Threshold
 const int Threshold = 650;
 
 // Delay time between readings
 const unsigned int dt = 250;
+
+// Function for updating LED
+void UpdateLED(int r, int g, int b){
+  analogWrite(LED_RED_PIN, r);
+  analogWrite(LED_GREEN_PIN, g);
+  analogWrite(LED_BLUE_PIN, b);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -33,7 +45,9 @@ void setup() {
 }
 
 void modeOff() {
-  // Off mode logic
+  UpdateLED(30,30,30); // RGB weak white
+  digitalWrite(LED_PIN, LOW); // Lights off
+  Serial.println("OFF MODE");
 }
 
 void modeAuto() {
