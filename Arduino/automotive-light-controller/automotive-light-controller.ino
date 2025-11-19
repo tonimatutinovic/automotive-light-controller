@@ -28,6 +28,11 @@ String auto_mode;
 // Delay time between readings
 const unsigned int dt = 250;
 
+// Debounce (tunnel logic)
+unsigned long ldrChangeStart = 0;
+bool ldrLightsOn = false;
+const unsigned long CHANGE_DELAY = 2000;
+
 // Function for updating LED
 void UpdateLED(int r, int g, int b){
   analogWrite(LED_RED_PIN, r);
@@ -58,16 +63,27 @@ void modeAuto() {
   dashLDRval = analogRead(DASH_LDR_PIN);
   backLDRval = analogRead(BACK_LDR_PIN);
 
+  bool dashActive = (dashLDRval > Threshold);
+  bool backActive = (backLDRval > Threshold);
+
   // Threshold logic
-  if (dashLDRval > Threshold || backLDRval > Threshold){
-    digitalWrite(HEADLIGHT_PIN, HIGH);  // Headlight on
-    auto_mode = "AUTO_ON";
-    
+  if (dashActive || backActive){
+    if(ldrChangeStart == 0){
+      ldrChangeStart = millis();
+    }
+    else if(millis() - ldrChangeStart >= CHANGE_DELAY){
+      ldrLightsOn = true;
+      auto_mode = "AUTO_ON";
+    }
   }
   else{
-    digitalWrite(HEADLIGHT_PIN, LOW); // Headlight off
+    ldrLightsOn = false;
+    ldrChangeStart = 0;
     auto_mode = "AUTO_OFF";
   }
+
+  // Update Headlight
+  digitalWrite(HEADLIGHT_PIN, ldrLightsOn ? HIGH : LOW);
 
   // Orange RGB
   UpdateLED(255, 120, 0);
