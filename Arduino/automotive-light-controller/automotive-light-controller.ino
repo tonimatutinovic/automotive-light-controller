@@ -70,6 +70,17 @@ void UpdateLED(int r, int g, int b){
   analogWrite(LED_BLUE_PIN, b);
 }
 
+// Mode check based on potentiometer value
+bool isOffMode() {
+  return potVal >= OFFstart && potVal <= OFFend;
+}
+bool isAutoMode() { 
+  return potVal >= AUTOstart && potVal <= AUTOend;
+}
+bool isOnMode() {
+  return potVal >= ONstart && potVal <= ONend;
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting main program...");
@@ -218,14 +229,13 @@ void loop() {
   // Reading potentiometer value
   potVal = analogRead(POT_PIN);
 
-  // Basic mode selection (example ranges)
-  if (potVal < 341) {
+  // Checking modes and calling corresponding handlers
+  if(isOffMode())
     modeOff();
-  } else if (potVal < 682) {
+  else if(isAutoMode()) 
     modeAuto();
-  } else {
+  else 
     modeOn();
-  }
 
   delay(dt);
 }
