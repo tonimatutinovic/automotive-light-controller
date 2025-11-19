@@ -22,8 +22,39 @@ const unsigned int dt = 250;
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(LED_RED_PIN, OUTPUT);
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_BLUE_PIN, OUTPUT);
+
+  pinMode(HEADLIGHT_PIN, OUTPUT);
+
+  Serial.println("READY");
+}
+
+void modeOff() {
+  // Off mode logic
+}
+
+void modeAuto() {
+  // Auto mode logic
+}
+
+void modeOn() {
+  // On mode logic
 }
 
 void loop() {
-  
+  potVal = analogRead(POT_PIN);
+
+  // Basic mode selection (example ranges)
+  if (potVal < 341) {
+    modeOff();
+  } else if (potVal < 682) {
+    modeAuto();
+  } else {
+    modeOn();
+  }
+
+  delay(dt);
 }
