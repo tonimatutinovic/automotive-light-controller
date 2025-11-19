@@ -46,7 +46,7 @@ void setup() {
 
 void modeOff() {
   UpdateLED(30,30,30); // RGB weak white
-  digitalWrite(LED_PIN, LOW); // Lights off
+  digitalWrite(HEADLIGHT_PIN, LOW); // Lights off
   Serial.println("OFF MODE");
 }
 
@@ -62,7 +62,9 @@ void modeAuto() {
 }
 
 void modeOn() {
-  // On mode logic
+  UpdateLED(0,255,0); // RGB green
+  digitalWrite(HEADLIGHT_PIN, HIGH); // Lights on
+  Serial.println("ON MODE");
 }
 
 void loop() {
