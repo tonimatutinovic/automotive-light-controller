@@ -22,6 +22,9 @@ int ONstart = 683, ONend = 1023;
 // Threshold
 const int Threshold = 650;
 
+// Lights mode in AUTO work mode (ON/OFF)
+String auto_mode;
+
 // Delay time between readings
 const unsigned int dt = 250;
 
@@ -55,10 +58,28 @@ void modeAuto() {
   dashLDRval = analogRead(DASH_LDR_PIN);
   backLDRval = analogRead(BACK_LDR_PIN);
 
-  Serial.print("Dash LDR: ");
+  // Threshold logic
+  if (dashLDRval > Threshold || backLDRval > Threshold){
+    digitalWrite(HEADLIGHT_PIN, HIGH);  // Headlight on
+    auto_mode = "AUTO_ON";
+    
+  }
+  else{
+    digitalWrite(HEADLIGHT_PIN, LOW); // Headlight off
+    auto_mode = "AUTO_OFF";
+  }
+
+  // Orange RGB
+  UpdateLED(255, 120, 0);
+
+  // Serial info
+  Serial.print("AUTO ");
+  Serial.print("dashLDR:");
   Serial.print(dashLDRval);
-  Serial.print(" Back LDR: ");
-  Serial.println(backLDRval);
+  Serial.print(" backLDR:");
+  Serial.print(backLDRval);
+  Serial.print(" ");
+  Serial.println(auto_mode);
 }
 
 void modeOn() {
