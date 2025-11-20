@@ -1,3 +1,26 @@
+/*
+ * Project: Automotive Light Controller
+ * Author: Toni Matutinović
+ * Hardware: Arduino Uno R3, RTC DS3231, Dual LDR Sensors, Potentiometer,
+ *           RGB LED (status indicator), Yellow LED (headlight output)
+ *
+ * Description:
+ *   Automatic vehicle light control system with three operating modes:
+ *     - OFF  : Manual override, lights disabled
+ *     - AUTO : Automatic headlight control using ambient light + RTC time
+ *     - ON   : Manual override, headlights forced on
+ *
+ *   Features:
+ *     • Dual-LDR ambient light sensing with noise filtering
+ *     • Watchdog-style sensor fault detection
+ *     • RGB LED state indicator (mode, errors, transitions)
+ *     • Headlight output control (via yellow LED)
+ *     • Optional simulated time mode for testing and debugging
+ *     • Sends real-time system data (mode, LDR readings, fault status) via Serial for VPython 3D visualization.
+ *
+ * Date: November 2025
+ */
+
 #include <Wire.h>
 #include <RTClib.h>
 
@@ -96,6 +119,7 @@ void setup() {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
+  // LED pins
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
   pinMode(LED_BLUE_PIN, OUTPUT);
@@ -114,12 +138,15 @@ void setup() {
   Serial.println("READY");
 }
 
+//Mode handlers
+
+// OFF mode
 void modeOff() {
   UpdateLED(30,30,30); // RGB weak white
   digitalWrite(HEADLIGHT_PIN, LOW); // Lights off
   Serial.println("OFF MODE");
 }
-
+// AUTO mode
 void modeAuto() {
   // Reading sensor values
   dashLDRval = analogRead(DASH_LDR_PIN);
@@ -165,6 +192,7 @@ void modeAuto() {
     else
       error = "NO";
 
+    // Sensor is active if sensor is working properly and if sensor value is passing the threshold
     bool dashActive = !dashFault && (dashLDRval > Threshold);
     bool backActive = !backFault && (backLDRval > Threshold);
 
@@ -178,16 +206,16 @@ void modeAuto() {
     }
     // DAY
     else{
-      if (dashActive || backActive){
+      if (dashActive || backActive){  // Checking if sensors are active
         if(ldrChangeStart == 0){
-          ldrChangeStart = millis();
+          ldrChangeStart = millis();  // Timer start
         }
-        else if(millis() - ldrChangeStart >= CHANGE_DELAY){
+        else if(millis() - ldrChangeStart >= CHANGE_DELAY){ // If change is lasting longer than 2 seconds, lights are turning on
           ldrLightsOn = true;
           auto_mode = "AUTO_ON";
         }
       }
-      else{
+      else{ // If there is no change detected lights are staying off
         ldrLightsOn = false;
         ldrChangeStart = 0;
         auto_mode = "AUTO_OFF";
@@ -217,7 +245,7 @@ void modeAuto() {
   Serial.println(now.minute());
 
 }
-
+// ON mode
 void modeOn() {
   UpdateLED(0,255,0); // RGB green
   digitalWrite(HEADLIGHT_PIN, HIGH); // Lights on
