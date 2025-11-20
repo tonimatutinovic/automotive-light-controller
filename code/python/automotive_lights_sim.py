@@ -1,6 +1,4 @@
 from vpython import *
-import tkinter as tk
-import numpy as np
 import serial
 import time
 from enum import Enum
@@ -42,19 +40,20 @@ brakeLightRadius = brakeLightY*2
 brakeLightLen = headLightZ*2
 
 offLightsColor = vector(0.15, 0.15, 0.15)
+offBrakeColor = vector(0.3, 0, 0)
 onLightsColor = vector(0.95, 0.95, 1)
 carColor = vector(0.4, 0.4, 0.4)
 
 headLightLeft = box(size = vector(headLightX, headLightY, headLightZ), color = offLightsColor, pos = vector(-carBottomX/2*0.75, carBottomY/2*0.5, carBottomZ/2))
 headLightCenter = box(size = vector(carBottomX*0.75, headLightY/4, headLightZ), color = offLightsColor, pos = vector(0, carBottomY/2*0.5+headLightY/2-headLightY/8, carBottomZ/2))
 headLightRight = box(size = vector(headLightX, headLightY, headLightZ), color = offLightsColor, pos = vector(carBottomX/2*0.75, carBottomY/2*0.5, carBottomZ/2))
-brakeLightCenter = box(size = vector(brakeLightX, brakeLightY, headLightZ), color = color.red, pos = vector(0, carBottomY/2*0.7, -carBottomZ/2))
-brakeLightLeft = box(size = vector(brakeLightY, brakeLightY*3.5, headLightZ), color = color.red, pos = vector(brakeLightX/2-brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5/2, -carBottomZ/2))
-brakeLightRight = box(size = vector(brakeLightY, brakeLightY*3.5, headLightZ), color = color.red, pos = vector(-brakeLightX/2+brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5/2, -carBottomZ/2))
+brakeLightCenter = box(size = vector(brakeLightX, brakeLightY, headLightZ), color = offBrakeColor, pos = vector(0, carBottomY/2*0.7, -carBottomZ/2))
+brakeLightLeft = box(size = vector(brakeLightY, brakeLightY*3.5, headLightZ), color = offBrakeColor, pos = vector(brakeLightX/2-brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5/2, -carBottomZ/2))
+brakeLightRight = box(size = vector(brakeLightY, brakeLightY*3.5, headLightZ), color = offBrakeColor, pos = vector(-brakeLightX/2+brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5/2, -carBottomZ/2))
 brakeLightLeftCylGlass = cylinder(radius = brakeLightRadius, length = brakeLightLen, color = vector(0.15, 0.15, 0.15), pos = vector(brakeLightX/2-brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
 brakeLightRightCylGlass = cylinder(radius = brakeLightRadius, length = brakeLightLen, color = vector(0.15, 0.15, 0.15), pos = vector(-brakeLightX/2+brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
-brakeLightLeftCyl = cylinder(radius = brakeLightRadius*0.65, length = brakeLightLen*2, color = color.red, pos = vector(brakeLightX/2-brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
-brakeLightRightCyl = cylinder(radius = brakeLightRadius*0.65, length = brakeLightLen*2, color = color.red, pos = vector(-brakeLightX/2+brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
+brakeLightLeftCyl = cylinder(radius = brakeLightRadius*0.65, length = brakeLightLen*2, color = offBrakeColor, pos = vector(brakeLightX/2-brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
+brakeLightRightCyl = cylinder(radius = brakeLightRadius*0.65, length = brakeLightLen*2, color = offBrakeColor, pos = vector(-brakeLightX/2+brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
 
 carBottom = box(size = vector(carBottomX, carBottomY, carBottomZ), color = carColor)
 carTop = box(size = vector(carTopX, carTopY, carTopZ), color = carColor, pos = vector(0, carTopY, 0))
@@ -62,9 +61,6 @@ tireFrontLeft = cylinder(radius = tireRadius, length = tireLen, color = color.bl
 tireFrontRight = cylinder(radius = tireRadius, length = tireLen, color = color.black, pos = vector(-carBottomX/2-tireLen*0.1, -carBottomY/2+tireRadius/2.5, carBottomZ/3.5))
 tireBackLeft = cylinder(radius = tireRadius, length = tireLen, color = color.black, pos = vector(carBottomX/2-tireLen*0.9, -carBottomY/2+tireRadius/2.5, -carBottomZ/3.5))
 tireBackRight = cylinder(radius = tireRadius, length = tireLen, color = color.black, pos = vector(-carBottomX/2-tireLen*0.1, -carBottomY/2+tireRadius/2.5, -carBottomZ/3.5))
-
-head = compound([headLightLeft, headLightCenter, headLightRight])
-brake = compound([brakeLightCenter, brakeLightLeft, brakeLightLeftCyl, brakeLightRight, brakeLightRightCyl])
 
 LDR_Dash = label(text = 'Dash', height = 12, pos = vector(0, carTopY*1.5, carTopZ/2))
 LDR_Back = label(text = 'Back', height = 12, pos = vector(0, carTopY*1.5, -carTopZ/2))
@@ -75,12 +71,24 @@ ErrorLabel = label(text = 'ERROR', height = 20, pos = vector(0, carTopY*1.5+1, 0
 Threshold = 650
 
 def LightsOn():
-    head.color = onLightsColor
-    brake.color = color.red
+    headLightLeft.color = onLightsColor
+    headLightCenter.color = onLightsColor
+    headLightRight.color = onLightsColor
+    brakeLightCenter.color = color.red
+    brakeLightLeft.color = color.red
+    brakeLightLeftCyl.color = color.red
+    brakeLightRight.color = color.red
+    brakeLightRightCyl.color = color.red
     
 def LightsOff():
-    head.color = offLightsColor
-    brake.color = offLightsColor
+    headLightLeft.color = offLightsColor
+    headLightCenter.color = offLightsColor
+    headLightRight.color = offLightsColor
+    brakeLightCenter.color = offBrakeColor
+    brakeLightLeft.color = offBrakeColor
+    brakeLightLeftCyl.color = offBrakeColor
+    brakeLightRight.color = offBrakeColor
+    brakeLightRightCyl.color = offBrakeColor
 
 def RemoveLabels():
     LDR_Dash.visible = False
@@ -124,21 +132,32 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
                 LDR_Value_Back = int(sensorReading[2].split(':')[1])
                 LDR_Auto_Mode = sensorReading[3]
                 LDR_Error = sensorReading[4]
+                Hour = sensorReading[5]
+                Minute = sensorReading[6]
             if(workMode == State.OFF.value):
                 StatusLabel.visible = True
+                ErrorLabel.visible = False
                 RemoveLabels()
                 LightsOff()
                 StatusLabel.text = State.OFF.value
                 StatusLabel.color = color.white
             if(workMode == State.ON.value):
+                StatusLabel.visible = True
+                ErrorLabel.visible = False
                 RemoveLabels()
                 LightsOn()
                 StatusLabel.text = State.ON.value
                 StatusLabel.color = color.white
             if(workMode == State.AUTO.value):
-                StatusLabel.text = State.AUTO.value
                 ErrorLabel.text = LDR_Error
+                StatusLabel.visible = True
+                StatusLabel.text = f"{LDR_Auto_Mode}\nTime: {Hour}:{Minute}"
+                ErrorLabel.visible = False
                 ShowLabels(LDR_Value_Dash, LDR_Value_Back)
+                if(LDR_Auto_Mode == AutoMode.ON.value):
+                    LightsOn()
+                elif(LDR_Auto_Mode == AutoMode.OFF.value):
+                    LightsOff()
                 if(LDR_Error == Fault.CRITICAL.value):
                     StatusLabel.visible = False
                     ErrorLabel.visible = True
@@ -151,14 +170,4 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
                 elif(LDR_Error == Fault.BACK.value):
                     LDR_Back.color = color.red
                     StatusLabel.visible = False
-                    ErrorLabel.visible = True
-                else:
-                    StatusLabel.visible = True
-                    StatusLabel.text = LDR_Auto_Mode
-                    ErrorLabel.visible = False
-                    ShowLabels(LDR_Value_Dash, LDR_Value_Back)
-                    if(LDR_Auto_Mode == AutoMode.ON.value):
-                        LightsOn()
-                    elif(LDR_Auto_Mode == AutoMode.OFF.value):
-                        LightsOff() 
-                      
+                    ErrorLabel.visible = True                      
