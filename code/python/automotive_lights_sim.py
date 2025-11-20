@@ -3,23 +3,27 @@ import serial
 import time
 from enum import Enum
 
+# Enumerations for system states
 class State(Enum):
     OFF = "OFF"
     AUTO = "AUTO"
     ON = "ON"
 
+# Enumerations for possible sensor faults
 class Fault(Enum):
     CRITICAL = "CRITICAL_FAULT"
     DASH = "DASH_FAULT"
     BACK = "BACK_FAULT"
 
+# Enumeration for automatic mode
 class AutoMode(Enum):
     ON = "AUTO_ON"
     OFF = "AUTO_OFF"
 
-scene.camera.pos = vector(3, 1.5, 3)     # desno, iznad i malo ispred
-scene.camera.axis = vector(-3, -1.5, -3) # gleda prema centru auta
+scene.camera.pos = vector(3, 1.5, 3)    # Camera position: right, above, slightly in front
+scene.camera.axis = vector(-3, -1.5, -3) # Camera looks towards the center of the car
 
+# Car dimensions
 carBottomX = 1.8
 carBottomY = 0.7
 carBottomZ = 4
@@ -28,22 +32,29 @@ carTopX = carBottomX
 carTopY = carBottomY*0.85
 carTopZ = carBottomZ*0.6
 
+# Wheel dimensions
 tireLen = carBottomX/8
 tireRadius = carBottomY/2.5
 
+# Headlight dimensions
 headLightX = carBottomX/6
 headLightY = headLightX/3
 headLightZ = headLightX/90
+
+# Brake light dimensions
 brakeLightX = headLightX*4.5
 brakeLightY = headLightY/2
 brakeLightRadius = brakeLightY*2
 brakeLightLen = headLightZ*2
 
+# Colors
 offLightsColor = vector(0.15, 0.15, 0.15)
 offBrakeColor = vector(0.3, 0, 0)
 onLightsColor = vector(0.95, 0.95, 1)
 carColor = vector(0.4, 0.4, 0.4)
 
+# 3D objects
+# Headlights and brake lights
 headLightLeft = box(size = vector(headLightX, headLightY, headLightZ), color = offLightsColor, pos = vector(-carBottomX/2*0.75, carBottomY/2*0.5, carBottomZ/2))
 headLightCenter = box(size = vector(carBottomX*0.75, headLightY/4, headLightZ), color = offLightsColor, pos = vector(0, carBottomY/2*0.5+headLightY/2-headLightY/8, carBottomZ/2))
 headLightRight = box(size = vector(headLightX, headLightY, headLightZ), color = offLightsColor, pos = vector(carBottomX/2*0.75, carBottomY/2*0.5, carBottomZ/2))
@@ -55,6 +66,7 @@ brakeLightRightCylGlass = cylinder(radius = brakeLightRadius, length = brakeLigh
 brakeLightLeftCyl = cylinder(radius = brakeLightRadius*0.65, length = brakeLightLen*2, color = offBrakeColor, pos = vector(brakeLightX/2-brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
 brakeLightRightCyl = cylinder(radius = brakeLightRadius*0.65, length = brakeLightLen*2, color = offBrakeColor, pos = vector(-brakeLightX/2+brakeLightY/2, carBottomY/2*0.7-brakeLightY*3.5, -carBottomZ/2), axis = vector(0, 0, -1))
 
+# Car body
 carBottom = box(size = vector(carBottomX, carBottomY, carBottomZ), color = carColor)
 carTop = box(size = vector(carTopX, carTopY, carTopZ), color = carColor, pos = vector(0, carTopY, 0))
 tireFrontLeft = cylinder(radius = tireRadius, length = tireLen, color = color.black, pos = vector(carBottomX/2-tireLen*0.9, -carBottomY/2+tireRadius/2.5, carBottomZ/3.5))
@@ -62,14 +74,18 @@ tireFrontRight = cylinder(radius = tireRadius, length = tireLen, color = color.b
 tireBackLeft = cylinder(radius = tireRadius, length = tireLen, color = color.black, pos = vector(carBottomX/2-tireLen*0.9, -carBottomY/2+tireRadius/2.5, -carBottomZ/3.5))
 tireBackRight = cylinder(radius = tireRadius, length = tireLen, color = color.black, pos = vector(-carBottomX/2-tireLen*0.1, -carBottomY/2+tireRadius/2.5, -carBottomZ/3.5))
 
+# Labels for LDR sensor readings
 LDR_Dash = label(text = 'Dash', height = 12, pos = vector(0, carTopY*1.5, carTopZ/2))
 LDR_Back = label(text = 'Back', height = 12, pos = vector(0, carTopY*1.5, -carTopZ/2))
 
+# Labels for status and error
 StatusLabel = label(text = State.OFF, height = 16, pos = vector(0, carTopY*1.5+1, 0))
 ErrorLabel = label(text = 'ERROR', height = 20, pos = vector(0, carTopY*1.5+1, 0), visible = False)
 
+# Threshold for LDR readings
 Threshold = 650
 
+# Function to turn all lights ON
 def LightsOn():
     headLightLeft.color = onLightsColor
     headLightCenter.color = onLightsColor
@@ -79,7 +95,8 @@ def LightsOn():
     brakeLightLeftCyl.color = color.red
     brakeLightRight.color = color.red
     brakeLightRightCyl.color = color.red
-    
+
+# Function to turn all lights OFF
 def LightsOff():
     headLightLeft.color = offLightsColor
     headLightCenter.color = offLightsColor
@@ -90,14 +107,16 @@ def LightsOff():
     brakeLightRight.color = offBrakeColor
     brakeLightRightCyl.color = offBrakeColor
 
+# Hide dash and back LDR labels
 def RemoveLabels():
     LDR_Dash.visible = False
     LDR_Back.visible = False
 
+# Show and update LDR labels with current readings
 def ShowLabels(dashVal, backVal):
     LDR_Dash.text = int(dashVal)
     if(dashVal > Threshold):
-        LDR_Dash.color = vector(0.7, 0.7, 0.7)
+        LDR_Dash.color = vector(0.7, 0.7, 0.7)  # dim color if above threshold
     else:
         LDR_Dash.color = color.white
     LDR_Dash.visible = True
@@ -109,7 +128,7 @@ def ShowLabels(dashVal, backVal):
     LDR_Back.visible = True
 
 
-
+# Read from Arduino and update scene
 with serial.Serial('com4', 115200, timeout= 1) as arduino:
     time.sleep(1)
     print("Waiting for arduino...")
@@ -127,6 +146,7 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
             print(arduinoPackage)
             sensorReading = arduinoPackage.split()
             workMode = sensorReading[0]
+            # Parse sensor and time values if available
             if(len(sensorReading) > 2):
                 LDR_Value_Dash = int(sensorReading[1].split(':')[1])
                 LDR_Value_Back = int(sensorReading[2].split(':')[1])
@@ -134,6 +154,7 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
                 LDR_Error = sensorReading[4]
                 Hour = sensorReading[5]
                 Minute = sensorReading[6]
+            # OFF mode: turn off lights, show status
             if(workMode == State.OFF.value):
                 StatusLabel.visible = True
                 ErrorLabel.visible = False
@@ -141,6 +162,7 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
                 LightsOff()
                 StatusLabel.text = State.OFF.value
                 StatusLabel.color = color.white
+            # ON mode: turn on lights, show status
             if(workMode == State.ON.value):
                 StatusLabel.visible = True
                 ErrorLabel.visible = False
@@ -148,6 +170,7 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
                 LightsOn()
                 StatusLabel.text = State.ON.value
                 StatusLabel.color = color.white
+            # AUTO mode: handle LDR readings, errors, lights
             if(workMode == State.AUTO.value):
                 ErrorLabel.text = LDR_Error
                 StatusLabel.visible = True
@@ -158,6 +181,7 @@ with serial.Serial('com4', 115200, timeout= 1) as arduino:
                     LightsOn()
                 elif(LDR_Auto_Mode == AutoMode.OFF.value):
                     LightsOff()
+                # Display errors if any
                 if(LDR_Error == Fault.CRITICAL.value):
                     StatusLabel.visible = False
                     ErrorLabel.visible = True
