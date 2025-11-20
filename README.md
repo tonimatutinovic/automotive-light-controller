@@ -43,17 +43,17 @@ The system detects LDR sensor faults, provides visual feedback via RGB LED, and 
 
 **OFF Mode**  
 ![OFF Mode](images/OFF-mode.png)  
-*Lights are off; RGB LED weak white; status label shows OFF.*  
+*Lights are off, RGB LED weak white, status label shows OFF.*  
 
 **ON Mode**  
 ![ON Mode](images/ON-mode.png)  
-*Lights forced on; RGB LED green; status label shows ON.*  
+*Lights forced on, RGB LED green, status label shows ON.*  
 
 **AUTO Mode**  
 
 **AUTO_OFF**  
 ![AUTO_OFF](images/AUTO_OFF.png)  
-*Ambient light high; lights remain off.*  
+*Ambient light high, lights remain off.*  
 
 **AUTO_ON**  
 ![AUTO_ON](images/AUTO_ON.png)  
@@ -82,7 +82,11 @@ The system detects LDR sensor faults, provides visual feedback via RGB LED, and 
 
 ## Demo Videos
 
-*Videos coming soon.*  
+- **Tunnel Logic / Debouncing Demo:** [tunnel-logic.mp4](videos/tunnel-logic.mp4)  
+  *Shows lights automatically activating when entering a tunnel or low-light area, ignoring brief shadows.*  
+
+- **Fault Handling Demo:** [fault.mp4](videos/fault.mp4)  
+  *Shows response to dash fault, system continues to operate normally using the back LDR sensor..*  
 
 ---
 
@@ -107,6 +111,9 @@ automotive-light-controller/
 │ ├─ back-fault.png
 │ └─ critical-fault.png
 ├─ videos/
+│ ├─ tunnel-logic.mp4
+│ └─ fault.mp4
+├─ .gitignore
 └─ README.md
 ```
 ---
